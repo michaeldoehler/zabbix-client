@@ -2,7 +2,7 @@
 
 namespace kamermans\ZabbixClient;
 
-use GuzzleHttp\Message\ResponseInterface as HttpResponseInterface;
+use Psr\Http\Message\ResponseInterface as HttpResponseInterface;
 
 class ApiResponse implements \ArrayAccess, \Iterator {
 
@@ -44,10 +44,6 @@ class ApiResponse implements \ArrayAccess, \Iterator {
     public function dd() {
         $this->dump();
         exit(2);
-    }
-
-    public function isEmpty() {
-        return !empty($this->result);
     }
 
     /* Start ArrayAccess */
@@ -97,7 +93,7 @@ class ApiResponse implements \ArrayAccess, \Iterator {
 
     private function parseResponse(HttpResponseInterface $response) {
         try {
-            $this->raw_response = $resp = $response->json();
+            $this->raw_response = $resp = json_decode($response->getBody()->getContents(), true);
             $this->jsonrpc = $resp['jsonrpc'];
             $this->id = $resp['id'];
             if (array_key_exists('error', $resp)) {

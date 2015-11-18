@@ -3,10 +3,8 @@
 namespace kamermans\ZabbixClient;
 
 use Graze\GuzzleHttp\JsonRpc\Client as RpcClient;
-use Graze\GuzzleHttp\JsonRpc\Utils as RpcUtils;
-use GuzzleHttp\Utils as GuzzleUtils;
-use GuzzleHttp\Stream\Stream as GuzzleStream;
-use GuzzleHttp\Message\RequestInterface as HttpRequestInterface;
+use GuzzleHttp\Psr7\Stream as GuzzleStream;
+use Psr\Http\Message\RequestInterface as HttpRequestInterface;
 
 class ZabbixClient {
 
@@ -35,10 +33,10 @@ class ZabbixClient {
     }
 
     private function authenticateRequest(HttpRequestInterface $request) {
-        $body = GuzzleUtils::jsonDecode((string)$request->getBody(), true);
+        $body = json_decode((string)$request->getBody(), true);
         $body['auth'] = $this->auth_token;
-        $json_body = RpcUtils::jsonEncode($body);
-        $request->setBody(GuzzleStream::factory($json_body));
+        $json_body = self::jsonEncode($body);
+        $request->withBody(\GuzzleHttp\Psr7\stream_for($json_body));
         return $request;
     }
 
@@ -52,6 +50,23 @@ class ZabbixClient {
             throw new AuthException($e->getResponse());
         }
     }
-
+    /**
+     * Wrapper for json_encode that includes character escaping by default
+     *
+     * @param  mixed          $data
+     * @param  boolean        $escapeChars
+     * @return string|boolean
+     */
+    public static function jsonEncode($data, $escapeChars = true)
+    {
+        $options =
+            \JSON_HEX_AMP  |
+            \JSON_HEX_APOS |
+            \JSON_HEX_QUOT |
+            \JSON_HEX_TAG  |
+            \JSON_UNESCAPED_UNICODE |
+            \JSON_UNESCAPED_SLASHES;
+        return \json_encode($data, $escapeChars ? $options : 0);
+    }
 
 }
